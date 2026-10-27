@@ -26,3 +26,11 @@
 - GNNs run full-batch on the GPU: about 65-90 ms per epoch, against about 2.3 s on the CPU while LightGBM was using the cores. Two repeat runs on CUDA with the same seed gave identical predictions.
 - Loss weight 0.7 illicit / 0.3 licit as in Weber et al.; early stopping on validation AUPRC, patience 100, max 1000 epochs.
 - First temporal seeds: GCN with all features around 0.55 F1, GraphSAGE with all features around 0.63. GCN with only local features is unstable (0.29 to 0.48 across seeds).
+
+## 2026-10-27 logistic regression and the time step
+
+- Logistic regression on the 94 local features scored 0.29 F1 / 0.17 AUPRC on the temporal test, far below its random-split score (0.75).
+- I checked on validation only: with the time step, val AUPRC 0.48; without it, 0.57. The time step has a standardised coefficient of +1.06 and is outside its training range (1-29) for every val/test node, so a linear model extrapolates it and shifts every score up. Trees put every step after 29 in the same bin, so LightGBM isn't affected the same way.
+- Some features reach |z| around 230 in validation after scaling on training, so the linear model is fragile there as well.
+- I kept the 94-feature row as specified and added `logreg local-no-step` (93 features) as a separate row. Temporal F1 0.41, AUPRC 0.195. Weber et al. report 0.457 F1 for logistic regression on local features (trained on steps 1-34). I'm not tuning logistic regression any further.
+- AUPRC below F1 for logistic regression means the top of its ranking is full of licit nodes with extreme feature values; the best threshold sits lower down, where precision recovers.

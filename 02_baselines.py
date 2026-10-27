@@ -52,6 +52,8 @@ def feature_sets(x, edges):
     nbr = neighbour_mean(x[:, LOCAL_COLS], edges, len(x))
     return {
         "local": x[:, LOCAL_COLS],
+        # The time step is outside its training range in val/test, which a linear model extrapolates.
+        "local-no-step": x[:, 1:94],
         "all": x[:, ALL_COLS],
         "local+nbr": np.hstack([x[:, LOCAL_COLS], nbr]),
         "all+nbr": np.hstack([x[:, ALL_COLS], nbr]),
@@ -60,6 +62,7 @@ def feature_sets(x, edges):
 
 MODELS = [
     ("logreg", "local"),
+    ("logreg", "local-no-step"),
     ("lgbm", "local"),
     ("lgbm", "all"),
     ("lgbm", "local+nbr"),
@@ -67,18 +70,28 @@ MODELS = [
 ]
 
 
+def save(df, path, models):
+    # Replace only the rows for the models that were just run.
+    if os.path.exists(path):
+        old = pd.read_csv(path)
+        rerun = pd.Series(list(zip(old["model"], old["features"]))).isin(models).to_numpy()
+        df = pd.concat([old[~rerun], df], ignore_index=True)
+    df.to_csv(path, index=False)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--splits", nargs="+", default=["temporal", "random"])
+    parser.add_argument("--models", nargs="+", default=None, help='e.g. "logreg:local-no-step"')
     args = parser.parse_args()
+    models = [m for m in MODELS if args.models is None or f"{m[0]}:{m[1]}" in args.models]
 
     x, y, t, edges = load_data()
     feats = feature_sets(x, edges)
     runs, steps = [], []
-    for split in args.splits:
+    for split in ["temporal", "random"]:
         for seed in SEEDS:
             tr, val, te = load_split(split, seed)
-            for model, fs in MODELS:
+            for model, fs in models:
                 xf = feats[fs]
                 if model == "logreg":
                     p_val, p_te = fit_logreg(xf[tr], y[tr], xf[val], xf[te], seed)
@@ -93,8 +106,8 @@ def main():
                 print(f"{split} seed {seed} {model} {fs}: f1 {res['f1']:.3f} auprc {res['auprc']:.3f}")
 
     os.makedirs("results", exist_ok=True)
-    pd.DataFrame(runs).to_csv(RUNS_PATH, index=False)
-    pd.DataFrame(steps).to_csv(PER_STEP_PATH, index=False)
+    save(pd.DataFrame(runs), RUNS_PATH, models)
+    save(pd.DataFrame(steps), PER_STEP_PATH, models)
     print(f"wrote {RUNS_PATH} and {PER_STEP_PATH}")
 
 
