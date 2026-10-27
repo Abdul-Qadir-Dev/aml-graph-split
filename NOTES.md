@@ -33,4 +33,11 @@
 - I checked on validation only: with the time step, val AUPRC 0.48; without it, 0.57. The time step has a standardised coefficient of +1.06 and is outside its training range (1-29) for every val/test node, so a linear model extrapolates it and shifts every score up. Trees put every step after 29 in the same bin, so LightGBM isn't affected the same way.
 - Some features reach |z| around 230 in validation after scaling on training, so the linear model is fragile there as well.
 - I kept the 94-feature row as specified and added `logreg local-no-step` (93 features) as a separate row. Temporal F1 0.41, AUPRC 0.195. Weber et al. report 0.457 F1 for logistic regression on local features (trained on steps 1-34). I'm not tuning logistic regression any further.
-- AUPRC below F1 for logistic regression means the top of its ranking is full of licit nodes with extreme feature values; the best threshold sits lower down, where precision recovers.
+- AUPRC is below F1 for logistic regression, so the very top of its ranking must be poor. My guess is that licit nodes with extreme feature values get the highest scores. I haven't checked this.
+
+## 2026-10-27 what happens after step 43
+
+- LightGBM (all features) gets recall between 0.64 and 0.97 on steps 35-42, then about 0 on every step from 43 to 49. That includes 47-49, where illicit labels come back (22, 36, 56). So the collapse isn't only about there being fewer illicit labels.
+- Dead end: an adversarial check (LightGBM telling steps 1-34 from 43-49, inside one class) gives AUC 1.0 for licit as well as illicit, so some features track time on their own. That check can't separate illicit drift from general drift.
+- What worked: k-nearest neighbours in standardised local-feature space (no time step), fitted on labelled steps 1-34. Illicit nodes in 35-42 have on average 79% illicit among their 10 nearest training nodes. Illicit nodes in 43-49 have 7%, about the same as licit nodes (5-6%). After step 43, the illicit transactions look like licit ones by every pattern in the training period.
+- This fits Weber et al.'s account of a dark market shutdown (the illicit actors the model learned stop showing up and something different takes their place), but the dataset is anonymised and can't confirm the cause.

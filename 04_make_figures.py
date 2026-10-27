@@ -13,7 +13,7 @@ TABLE_PATH = "results/main_table.csv"
 FIG_DIR = "figures"
 TEST_START = 35
 
-ORDER = ["logreg local", "lgbm local", "lgbm all", "lgbm local+nbr", "lgbm all+nbr",
+ORDER = ["logreg local", "logreg local-no-step", "lgbm local", "lgbm all", "lgbm local+nbr", "lgbm all+nbr",
          "gcn local", "gcn all", "sage local", "sage all"]
 # Series shown in the per-step plot, one per model family.
 STEP_MODELS = ["logreg local", "lgbm all", "lgbm all+nbr", "gcn all", "sage all"]
@@ -65,7 +65,7 @@ def plot_per_step(steps, stats, path):
     ax.set_ylabel("illicit F1", color=INK)
     ax.set_title("Illicit F1 per test time step (temporal split, mean of 5 seeds, band = 1 sd)",
                  color=INK, fontsize=11, loc="left")
-    ax.legend(frameon=False, fontsize=9, ncol=3, loc="lower left")
+    ax.legend(frameon=False, fontsize=9, ncol=2, loc="upper right")
     style(ax)
 
     test = stats[stats["step"] >= TEST_START]
