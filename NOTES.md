@@ -41,3 +41,11 @@
 - Dead end: an adversarial check (LightGBM telling steps 1-34 from 43-49, inside one class) gives AUC 1.0 for licit as well as illicit, so some features track time on their own. That check can't separate illicit drift from general drift.
 - What worked: k-nearest neighbours in standardised local-feature space (no time step), fitted on labelled steps 1-34. Illicit nodes in 35-42 have on average 79% illicit among their 10 nearest training nodes. Illicit nodes in 43-49 have 7%, about the same as licit nodes (5-6%). After step 43, the illicit transactions look like licit ones by every pattern in the training period.
 - This fits Weber et al.'s account of a dark market shutdown (the illicit actors the model learned stop showing up and something different takes their place), but the dataset is anonymised and can't confirm the cause.
+
+## 2026-10-27 results and comparison with the paper
+
+- Final temporal F1: LightGBM all+nbr 0.793, GraphSAGE all 0.629, GCN all 0.556. LightGBM on all features beats GraphSAGE on all features on every seed (by 0.11 to 0.16).
+- What surprised me: the random split inflates the GNNs more than LightGBM (0.27-0.39 vs 0.17-0.20 F1), so it makes the GNNs look closer to the trees than they are (gap 0.06 instead of 0.16).
+- Checked Weber et al.'s Table 1 against the PDF: random forest AF 0.788, GCN 0.628, logistic regression LF 0.457. My LightGBM is close to their random forest; my GCN is lower, but I fit on 1-29 with one untuned setting, while they fit on 1-34 and tuned it.
+- The paper places the dark market closure at step 43 and says even a random forest retrained after every step can't catch the new illicit transactions. It gives no data for that beyond Figure 2; the nearest-neighbour check above is my own.
+- Wall times in the GNN log jump to hours for a few runs, probably because the PC went to sleep. The results aren't affected.
