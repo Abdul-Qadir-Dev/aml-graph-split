@@ -20,3 +20,9 @@
 
 - Temporal: fit on labelled nodes in steps 1-29 (26,381), validate on 30-34 (3,513), test on 35-49 (16,670). Every model fits on 1-29 only, including logistic regression, so all models see the same data. I don't refit on 1-34 afterwards.
 - Random: for each seed, a stratified split of all labelled nodes with the same sizes (26,381 / 3,513 / 16,670). The seed changes both the split and the model's randomness.
+
+## 2026-10-27 training setup
+
+- GNNs run full-batch on the GPU: about 65-90 ms per epoch, against about 2.3 s on the CPU while LightGBM was using the cores. Two repeat runs on CUDA with the same seed gave identical predictions.
+- Loss weight 0.7 illicit / 0.3 licit as in Weber et al.; early stopping on validation AUPRC, patience 100, max 1000 epochs.
+- First temporal seeds: GCN with all features around 0.55 F1, GraphSAGE with all features around 0.63. GCN with only local features is unstable (0.29 to 0.48 across seeds).
